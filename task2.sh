@@ -1,9 +1,14 @@
 # Count "CSC510" occurrences in files containing "sample"
-grep -rl "sample" . | while read file; do
-    count=$(grep -o "CSC510" "$file" | wc -l)
-    # MacOS does not support -c%s to get this file size.
-    size=$(stat -f%z "$file")
-    if [ "$count" -ge 3 ]; then
-        echo "$count $size $file"
-    fi
-done | sort -k1,1nr -k2,2nr | gawk '{sub(/file_/, "filtered_", $3); print $3}'
+
+#!/bin/bash
+
+grep -rl 'sample' dataset1/ | 
+xargs -I {} sh -c 'count=$(grep -o "CSC510" "{}" | wc -l); 
+if  [ "$count" -ge 3 ];
+then echo "$count {}"; 
+fi' | gawk '{print $1, $2}' | 
+xargs -I {} sh -c 'size=$(stat -f "%z" "$(echo {} | cut -d" " -f2)");
+echo "$(echo {} | cut -d" " -f1) $size $(echo {} | cut -d" " -f2)"' | 
+sort -k1,1nr -k2,2nr | 
+sed 's/dataset1\/\///g' | 
+sed 's/file_/filtered_/'
